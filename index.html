@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ko" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Re:Cap - 당신의 갤러리 무덤 속, 그 사진을 구출해 드립니다</title>
+    <meta name="description" content="AI가 망친 사진을 보정 티 없이 자연스럽게 복원합니다. Re:Light, Re:Frame, Re:Live.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap');
+
+        * {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: #0a0a0a;
+            color: #ffffff;
+        }
+
+        /* Aurora Background Animation */
+        .aurora-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .aurora-bg::before,
+        .aurora-bg::after {
+            content: '';
+            position: absolute;
+            width: 140%;
+            height: 140%;
+            background: radial-gradient(ellipse at center, rgba(139, 92, 246, 0.15) 0%, transparent 60%);
+            animation: aurora 20s ease-in-out infinite;
+        }
+
+        .aurora-bg::before {
+            top: -50%;
+            left: -20%;
+            animation-delay: 0s;
+        }
+
+        .aurora-bg::after {
+            bottom: -50%;
+            right: -20%;
+            background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.12) 0%, transparent 60%);
+            animation-delay: 10s;
+        }
+
+        @keyframes aurora {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+                opacity: 0.8;
+            }
+            33% {
+                transform: translate(10%, 10%) scale(1.1);
+                opacity: 0.6;
+            }
+            66% {
+                transform: translate(-10%, 5%) scale(0.95);
+                opacity: 0.7;
+            }
+        }
+
+        /* Before/After Slider Styles */
+        .slider-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            border-radius: 20px;
+            cursor: ew-resize;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .slider-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .slider-before {
+            filter: brightness(1.1) contrast(1.15) saturate(1.2);
+        }
+
+        .slider-after {
+            clip-path: inset(0 50% 0 0);
+            filter: brightness(0.4) contrast(0.8) saturate(0.6) blur(1.5px) grayscale(0.2);
+        }
+
+        .slider-handle {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, rgba(139, 92, 246, 0.8), rgba(59, 130, 246, 0.8));
+            transform: translateX(-50%);
+            cursor: ew-resize;
+            z-index: 10;
+        }
+
+        .slider-handle::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 48px;
+            height: 48px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .slider-handle::after {
+            content: '⇄';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+            color: #0a0a0a;
+            z-index: 1;
+        }
+
+        .label {
+            position: absolute;
+            top: 20px;
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 5;
+        }
+
+        .label-before {
+            left: 20px;
+            color: #ef4444;
+        }
+
+        .label-after {
+            right: 20px;
+            color: #10b981;
+        }
+
+        /* Button Glow Effect */
+        .btn-primary {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(139, 92, 246, 0.6);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(139, 92, 246, 0.3);
+            box-shadow: 0 20px 40px rgba(139, 92, 246, 0.2);
+        }
+
+        /* Smooth scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <!-- Aurora Background -->
+    <div class="aurora-bg"></div>
+
+    <!-- Main Container -->
+    <div class="relative z-10">
+        <!-- Hero Section -->
+        <section class="min-h-screen flex flex-col items-center justify-center px-6 py-20">
+            <div class="max-w-5xl mx-auto text-center">
+                <!-- Logo -->
+                <div class="mb-8">
+                    <h1 class="text-5xl md:text-6xl font-bold mb-2">
+                        <span class="bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">
+                            Re:Cap
+                        </span>
+                    </h1>
+                    <p class="text-sm text-gray-400 tracking-widest">PHOTO RESCUE</p>
+                </div>
+
+                <!-- Main Headline -->
+                <h2 class="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+                    당신의 갤러리 무덤 속,<br>
+                    그 사진을 구출해 드립니다.
+                </h2>
+
+                <!-- Sub Copy -->
+                <p class="text-lg md:text-xl text-gray-400 mb-12 leading-relaxed max-w-3xl mx-auto">
+                    빛이 부족해서, 구도가 아쉬워서 세상에 나오지 못한 추억들.<br>
+                    AI가 보정 티 없이 자연스럽게 다시 살려드립니다.
+                </p>
+
+                <!-- CTA Buttons -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+                    <button onclick="scrollToDemo()" class="btn-primary px-8 py-4 rounded-full font-semibold text-lg w-full sm:w-auto">
+                        죽은 사진 살려보기 (무료)
+                    </button>
+                    <a href="#download" class="btn-secondary px-8 py-4 rounded-full font-semibold text-lg w-full sm:w-auto">
+                        App 다운로드
+                    </a>
+                </div>
+
+                <!-- Scroll Indicator -->
+                <div class="animate-bounce mt-12">
+                    <svg class="w-6 h-6 mx-auto text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- Before/After Demo Section -->
+        <section id="demo" class="py-20 px-6">
+            <div class="max-w-6xl mx-auto">
+                <div class="text-center mb-16">
+                    <h3 class="text-3xl md:text-5xl font-bold mb-4">Before & After</h3>
+                    <p class="text-gray-400 text-lg">드래그로 직접 비교해보세요</p>
+                </div>
+
+                <!-- Slider -->
+                <div class="slider-container mx-auto" id="sliderContainer">
+                    <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1400&q=80&fit=crop" alt="Before" class="slider-image slider-before">
+                    <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1400&q=80&fit=crop" alt="After" class="slider-image slider-after" id="sliderAfter">
+                    <div class="slider-handle" id="sliderHandle"></div>
+                    <div class="label label-after">Re:Cap (After)</div>
+                    <div class="label label-before">원본 (Before)</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="py-20 px-6">
+            <div class="max-w-6xl mx-auto">
+                <div class="text-center mb-16">
+                    <h3 class="text-3xl md:text-5xl font-bold mb-4">Core Features</h3>
+                    <p class="text-gray-400 text-lg">3가지 마법으로 사진을 부활시킵니다</p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-8">
+                    <!-- Feature 1: Re:Light -->
+                    <div class="feature-card p-8 rounded-2xl">
+                        <div class="text-4xl mb-4">💡</div>
+                        <h4 class="text-2xl font-bold mb-3 bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">
+                            Re:Light
+                        </h4>
+                        <p class="text-gray-400 leading-relaxed">
+                            어두운 조명, 역광, 그림자까지.<br>
+                            AI가 자연광처럼 빛을 되살립니다.
+                        </p>
+                    </div>
+
+                    <!-- Feature 2: Re:Frame -->
+                    <div class="feature-card p-8 rounded-2xl">
+                        <div class="text-4xl mb-4">🎯</div>
+                        <h4 class="text-2xl font-bold mb-3 bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">
+                            Re:Frame
+                        </h4>
+                        <p class="text-gray-400 leading-relaxed">
+                            아쉬운 구도와 앵글.<br>
+                            전문가의 시선으로 다시 프레이밍합니다.
+                        </p>
+                    </div>
+
+                    <!-- Feature 3: Re:Live -->
+                    <div class="feature-card p-8 rounded-2xl">
+                        <div class="text-4xl mb-4">✨</div>
+                        <h4 class="text-2xl font-bold mb-3 bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">
+                            Re:Live
+                        </h4>
+                        <p class="text-gray-400 leading-relaxed">
+                            흐릿하고 노이즈 많은 사진.<br>
+                            디테일까지 살아나는 마법을 경험하세요.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Download Section -->
+        <section id="download" class="py-20 px-6">
+            <div class="max-w-4xl mx-auto text-center">
+                <h3 class="text-3xl md:text-5xl font-bold mb-6">
+                    지금 바로 시작하세요
+                </h3>
+                <p class="text-gray-400 text-lg mb-12">
+                    첫 10장은 무료로 복원해드립니다
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                    <a href="#" class="btn-primary px-8 py-4 rounded-full font-semibold text-lg w-full sm:w-auto inline-block">
+                        iOS App 다운로드
+                    </a>
+                    <a href="#" class="btn-primary px-8 py-4 rounded-full font-semibold text-lg w-full sm:w-auto inline-block">
+                        Android App 다운로드
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="py-12 px-6 border-t border-gray-800">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div class="text-center md:text-left">
+                        <div class="text-xl font-bold bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent mb-2">
+                            Re:Cap
+                        </div>
+                        <p class="text-gray-500 text-sm">
+                            © 2024 Re:Cap. All rights reserved.
+                        </p>
+                    </div>
+
+                    <!-- Social Links -->
+                    <div class="flex gap-6">
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors" aria-label="Instagram">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073z"/>
+                                <path d="M12 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors" aria-label="Twitter">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors" aria-label="YouTube">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Before/After Slider Functionality
+        const sliderContainer = document.getElementById('sliderContainer');
+        const sliderAfter = document.getElementById('sliderAfter');
+        const sliderHandle = document.getElementById('sliderHandle');
+
+        let isDragging = false;
+
+        function updateSlider(x) {
+            const rect = sliderContainer.getBoundingClientRect();
+            const offsetX = Math.max(0, Math.min(x - rect.left, rect.width));
+            const percentage = (offsetX / rect.width) * 100;
+
+            sliderAfter.style.clipPath = `inset(0 ${100 - percentage}% 0 0)`;
+            sliderHandle.style.left = `${percentage}%`;
+        }
+
+        sliderContainer.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            updateSlider(e.clientX);
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                updateSlider(e.clientX);
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Touch support for mobile
+        sliderContainer.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            updateSlider(e.touches[0].clientX);
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                updateSlider(e.touches[0].clientX);
+            }
+        });
+
+        document.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        // Smooth scroll to demo
+        function scrollToDemo() {
+            document.getElementById('demo').scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+
+        // Parallax effect for aurora
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const aurora = document.querySelector('.aurora-bg');
+            if (aurora) {
+                aurora.style.transform = `translateY(${scrolled * 0.5}px)`;
+            }
+        });
+    </script>
+</body>
+</html>

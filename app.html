@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Re:Cap - 사진 심폐소생</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap');
+
+        * {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: #0a0a0a;
+            color: #ffffff;
+        }
+
+        /* Aurora Background */
+        .aurora-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .aurora-bg::before {
+            content: '';
+            position: absolute;
+            width: 140%;
+            height: 140%;
+            top: -50%;
+            left: -20%;
+            background: radial-gradient(ellipse at center, rgba(139, 92, 246, 0.15) 0%, transparent 60%);
+            animation: aurora 20s ease-in-out infinite;
+        }
+
+        @keyframes aurora {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+                opacity: 0.8;
+            }
+            50% {
+                transform: translate(10%, 10%) scale(1.1);
+                opacity: 0.6;
+            }
+        }
+
+        /* Upload Zone */
+        .upload-zone {
+            border: 3px dashed rgba(139, 92, 246, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.drag-over {
+            border-color: rgba(139, 92, 246, 0.8);
+            background: rgba(139, 92, 246, 0.05);
+        }
+
+        /* Loading Animation */
+        .loader {
+            border: 4px solid rgba(139, 92, 246, 0.1);
+            border-top: 4px solid #8b5cf6;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Button */
+        .btn-primary {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(139, 92, 246, 0.6);
+        }
+
+        /* Image Compare */
+        .image-container {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .image-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .label-badge {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- Aurora Background -->
+    <div class="aurora-bg"></div>
+
+    <!-- Main Container -->
+    <div class="relative z-10 min-h-screen py-12 px-6">
+        <div class="max-w-6xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-16">
+                <!-- Logo -->
+                <h1 class="text-5xl md:text-6xl font-bold mb-2">
+                    <span class="bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">
+                        Re:Cap
+                    </span>
+                </h1>
+                <p class="text-sm text-gray-400 tracking-widest mb-12">PHOTO RESCUE</p>
+
+                <!-- Main Headline -->
+                <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+                    <span class="bg-gradient-to-r from-white via-violet-100 to-blue-100 bg-clip-text text-transparent">
+                        당신의 갤러리 무덤 속,<br>
+                        그 사진을 구출해 드립니다.
+                    </span>
+                </h2>
+
+                <!-- Sub Description -->
+                <p class="text-lg md:text-xl text-gray-400 leading-relaxed max-w-3xl mx-auto">
+                    빛이 부족해서, 흔들려서 세상에 나오지 못한 소중한 B컷들.<br>
+                    인위적인 보정 없이, 전문가의 손길로 자연스럽게 다시 살려냅니다.
+                </p>
+            </div>
+
+            <!-- Upload Section -->
+            <div id="uploadSection" class="max-w-2xl mx-auto mb-12">
+                <div class="upload-zone bg-gray-900/50 backdrop-blur-sm rounded-2xl p-12 text-center cursor-pointer"
+                     id="uploadZone"
+                     onclick="document.getElementById('fileInput').click()">
+                    <input type="file" id="fileInput" accept="image/*" class="hidden">
+
+                    <svg class="w-20 h-20 mx-auto mb-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+
+                    <h3 class="text-2xl font-bold mb-3">사진을 업로드하세요</h3>
+                    <p class="text-gray-400 mb-4">
+                        클릭하거나 드래그 앤 드롭으로 추가할 수 있습니다
+                    </p>
+                    <p class="text-sm text-gray-500">
+                        JPG, PNG 지원 · 최대 10MB
+                    </p>
+                </div>
+            </div>
+
+            <!-- Loading Section (Hidden) -->
+            <div id="loadingSection" class="hidden max-w-2xl mx-auto text-center">
+                <div class="loader mx-auto mb-6"></div>
+                <h3 class="text-2xl font-bold mb-2">Re:Cap 현상 중...</h3>
+                <p class="text-gray-400">
+                    AI가 사진을 복원하고 있습니다. 약 10~30초 소요됩니다.
+                </p>
+            </div>
+
+            <!-- Result Section (Hidden) -->
+            <div id="resultSection" class="hidden">
+                <div class="text-center mb-8">
+                    <h3 class="text-3xl font-bold mb-2">복원 완료! 🎉</h3>
+                    <p class="text-gray-400">왼쪽 원본과 오른쪽 결과를 비교해보세요</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8 mb-8">
+                    <!-- Original -->
+                    <div class="image-container relative">
+                        <div class="label-badge absolute top-4 left-4 text-red-400 z-10">
+                            원본 (Before)
+                        </div>
+                        <img id="originalImage" src="" alt="Original">
+                    </div>
+
+                    <!-- Result -->
+                    <div class="image-container relative">
+                        <div class="label-badge absolute top-4 left-4 text-green-400 z-10">
+                            Re:Cap (After)
+                        </div>
+                        <img id="resultImage" src="" alt="Result">
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a id="downloadBtn" href="#" download="recap_result.jpg"
+                       class="btn-primary px-8 py-4 rounded-full font-semibold text-lg text-center">
+                        복원 사진 다운로드
+                    </a>
+                    <button onclick="resetApp()"
+                            class="bg-gray-800 hover:bg-gray-700 px-8 py-4 rounded-full font-semibold text-lg">
+                        새로운 사진 복원하기
+                    </button>
+                </div>
+            </div>
+
+            <!-- Error Section (Hidden) -->
+            <div id="errorSection" class="hidden max-w-2xl mx-auto">
+                <div class="bg-red-500/10 border border-red-500/30 rounded-2xl p-8 text-center">
+                    <svg class="w-16 h-16 mx-auto mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <h3 class="text-2xl font-bold mb-3 text-red-400">오류가 발생했습니다</h3>
+                    <p id="errorMessage" class="text-gray-300 mb-6"></p>
+                    <button onclick="resetApp()"
+                            class="btn-primary px-8 py-4 rounded-full font-semibold">
+                        다시 시도하기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const uploadSection = document.getElementById('uploadSection');
+        const loadingSection = document.getElementById('loadingSection');
+        const resultSection = document.getElementById('resultSection');
+        const errorSection = document.getElementById('errorSection');
+
+        // File input change event
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFileUpload(file);
+            }
+        });
+
+        // Drag and Drop events
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('drag-over');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleFileUpload(file);
+            } else {
+                showError('이미지 파일만 업로드할 수 있습니다.');
+            }
+        });
+
+        // Handle file upload
+        async function handleFileUpload(file) {
+            // Show loading
+            uploadSection.classList.add('hidden');
+            loadingSection.classList.remove('hidden');
+            resultSection.classList.add('hidden');
+            errorSection.classList.add('hidden');
+
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Store original image for display
+            const originalImageUrl = URL.createObjectURL(file);
+            document.getElementById('originalImage').src = originalImageUrl;
+
+            try {
+                // Call API
+                const response = await fetch(`${API_URL}/rescue`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || '서버 오류가 발생했습니다.');
+                }
+
+                const data = await response.json();
+
+                if (data.success && data.result_url) {
+                    // Show result
+                    document.getElementById('resultImage').src = data.result_url;
+                    document.getElementById('downloadBtn').href = data.result_url;
+
+                    loadingSection.classList.add('hidden');
+                    resultSection.classList.remove('hidden');
+                } else {
+                    throw new Error('AI 처리에 실패했습니다.');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+            }
+        }
+
+        // Show error
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            loadingSection.classList.add('hidden');
+            uploadSection.classList.add('hidden');
+            resultSection.classList.add('hidden');
+            errorSection.classList.remove('hidden');
+        }
+
+        // Reset app
+        function resetApp() {
+            fileInput.value = '';
+            uploadSection.classList.remove('hidden');
+            loadingSection.classList.add('hidden');
+            resultSection.classList.add('hidden');
+            errorSection.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
